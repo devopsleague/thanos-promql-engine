@@ -240,6 +240,10 @@ func newAggregateExpression(e *logicalplan.Aggregation, scanners storage.Scanner
 	if err != nil {
 		return nil, err
 	}
+	if e.Op == parser.COUNT_VALUES {
+		param := logicalplan.UnsafeUnwrapString(e.Param)
+		return aggregate.NewCountValues(model.NewVectorPool(opts.StepsBatch), next, param, opts), nil
+	}
 
 	if e.Param != nil && e.Param.ReturnType() != parser.ValueTypeString {
 		paramOp, err = newOperator(e.Param, scanners, opts, hints)
@@ -247,7 +251,6 @@ func newAggregateExpression(e *logicalplan.Aggregation, scanners storage.Scanner
 			return nil, err
 		}
 	}
-
 	if e.Op == parser.TOPK || e.Op == parser.BOTTOMK {
 		next, err = aggregate.NewKHashAggregate(model.NewVectorPool(opts.StepsBatch), next, paramOp, e.Op, !e.Without, e.Grouping, opts)
 	} else {
@@ -259,7 +262,6 @@ func newAggregateExpression(e *logicalplan.Aggregation, scanners storage.Scanner
 	}
 
 	return exchange.NewConcurrent(next, 2, opts), nil
-
 }
 
 func newBinaryExpression(e *logicalplan.Binary, scanners storage.Scanners, opts *query.Options, hints promstorage.SelectHints) (model.VectorOperator, error) {

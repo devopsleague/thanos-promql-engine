@@ -121,6 +121,15 @@ func TestQueriesAgainstOldEngine(t *testing.T) {
 		step  time.Duration
 	}{
 		{
+			name: "count_values",
+			load: `load 30s
+        version{foo="bar"} 1+1x40
+        version{foo="baz"} 1+2x40
+        version{foo="quz"} 2+1x40
+      `,
+			query: `count_values("val", version)`,
+		},
+		{
 			name: "duplicate label fuzz",
 			load: `load 30s
             			http_requests_total{pod="nginx-1", route="/"} 41.00+0.20x40
@@ -2771,6 +2780,16 @@ func TestInstantQuery(t *testing.T) {
 		query     string
 		queryTime time.Time
 	}{
+		{
+			name: "count_values",
+			load: `load 30s
+        version{foo="bar"} 1
+        version{foo="baz"} 1
+        version{foo="quz"} 2
+      `,
+			query:     `count_values("val", version)`,
+			queryTime: time.Unix(0, 0),
+		},
 		{
 			name: "binary pairing early exit fuzz",
 			load: `load 30s
